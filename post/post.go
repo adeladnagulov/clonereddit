@@ -35,10 +35,11 @@ type CommentsPost struct { //заглушка
 
 type Repo interface {
 	CreateNewPost(userId, username, category, title, postType, text, url string) *Post
+	GetAllPosts() ([]*Post, error)
 }
 
 type MemoryRepo struct {
-	mu    sync.Mutex
+	mu    sync.RWMutex
 	Posts []*Post
 }
 
@@ -46,6 +47,12 @@ func NewPostMemoryRepo() *MemoryRepo {
 	return &MemoryRepo{
 		Posts: make([]*Post, 0),
 	}
+}
+
+func (r *MemoryRepo) GetAllPosts() ([]*Post, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.Posts, nil
 }
 
 func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, text, url string) *Post {

@@ -40,10 +40,27 @@ func (h *PostHandle) AddPost(w http.ResponseWriter, r *http.Request) {
 	newPost := h.Repo.CreateNewPost(u.ID, u.UserName, req.Category, req.Title, req.Type, req.Text, req.URL)
 	resp, err := json.Marshal(newPost)
 	if err != nil {
-		http.Error(w, "json Marifk error: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
+	w.Write(resp)
+}
+
+func (h *PostHandle) GetPosts(w http.ResponseWriter, r *http.Request) {
+	list, err := h.Repo.GetAllPosts()
+	if err != nil {
+		http.Error(w, "Get posts error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	resp, err := json.Marshal(list)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }

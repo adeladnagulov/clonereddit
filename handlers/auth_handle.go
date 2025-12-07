@@ -62,10 +62,12 @@ func (h *UserHandler) Login(w http.ResponseWriter, r *http.Request) {
 	u, err := h.Repo.Login(req.Name, req.Password)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusUnauthorized)
+		return
 	}
 	token, err := GenerateJWTToken(u)
 	if err != nil {
 		http.Error(w, "Не удалось получить токен"+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")

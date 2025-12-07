@@ -8,7 +8,10 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var userClaimsKey = "UsCLKey"
+type contextKey string
+
+const ctxKey = contextKey("ctxKey")
+
 var jwtSecret = []byte("SecretKey")
 
 type UserClaims struct {
@@ -16,9 +19,9 @@ type UserClaims struct {
 	UserName string `json:"username"`
 }
 
-func GetUserClaims(ctx context.Context) (*UserClaims, bool) {
-	v, ok := ctx.Value(userClaimsKey).(UserClaims)
-	return &v, ok
+func GetUserClaims(ctx context.Context) (UserClaims, bool) {
+	v, ok := ctx.Value(ctxKey).(UserClaims)
+	return v, ok
 }
 
 func Auth(next http.Handler) http.Handler {
@@ -35,11 +38,13 @@ func Auth(next http.Handler) http.Handler {
 		})
 		if err != nil || !token.Valid {
 			http.Error(w, "Не валидный токен авторизации", http.StatusUnauthorized)
+			return
 		}
 
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			http.Error(w, "Не валидный токен Claims", http.StatusUnauthorized)
+			return
 		}
 		userMap, ok := claims["user"].(map[string]interface{})
 		if !ok {
@@ -59,7 +64,7 @@ func Auth(next http.Handler) http.Handler {
 			ID:       id,
 			UserName: username,
 		}
-		ctx := context.WithValue(r.Context(), userClaimsKey, user)
+		ctx := context.WithValue(r.Context(), ctxKey, user)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

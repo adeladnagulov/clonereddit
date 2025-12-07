@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
 func main() {
@@ -19,19 +17,23 @@ func main() {
 	postRepo := post.NewPostMemoryRepo()
 	postHandle := handlers.NewPostHandle(postRepo)
 
-	r := mux.NewRouter()
+	r := http.NewServeMux()
+	r.HandleFunc("POST /api/register", userHandle.Register)
+	r.HandleFunc("POST /api/login", userHandle.Login)
+	r.HandleFunc("GET /api/posts", postHandle.GetPosts)
 
-	webHtmlHandler := http.FileServer(http.Dir("./web"))
+	authR := http.NewServeMux()
+	authR.HandleFunc("POST /api/posts", postHandle.AddPost)
+
+	r.Handle("/api/", middleware.Auth(authR))
+
+	webHtmlHandler := http.FileServer(http.Dir("./web/html"))
 	r.Handle("/", webHtmlHandler)
-
 	staticHandle := http.FileServer(http.Dir("./web"))
-	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", staticHandle))
-
-	r.HandleFunc("/api/register", userHandle.Register).Methods("POST")
-	r.HandleFunc("/api/login", userHandle.Login).Methods("POST")
-	authPostHandle := middleware.Auth(http.HandlerFunc(postHandle.AddPost))
-	r.Handle("/api/posts", authPostHandle).Methods("POST")
+	r.Handle("/static/", http.StripPrefix("/static/", staticHandle))
 
 	fmt.Println("starting server at :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
+
+	handler := middleware.StripTrailingSlash(r)
+	log.Fatal(http.ListenAndServe(":8080", handler))
 }
