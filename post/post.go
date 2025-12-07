@@ -36,6 +36,7 @@ type CommentsPost struct { //заглушка
 type Repo interface {
 	CreateNewPost(userId, username, category, title, postType, text, url string) *Post
 	GetAllPosts() ([]*Post, error)
+	CategoryPosts(category string) ([]*Post, error)
 }
 
 type MemoryRepo struct {
@@ -53,6 +54,18 @@ func (r *MemoryRepo) GetAllPosts() ([]*Post, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.Posts, nil
+}
+
+func (r *MemoryRepo) CategoryPosts(category string) ([]*Post, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	rez := []*Post{}
+	for _, p := range r.Posts {
+		if p.Category == category {
+			rez = append(rez, p)
+		}
+	}
+	return rez, nil
 }
 
 func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, text, url string) *Post {

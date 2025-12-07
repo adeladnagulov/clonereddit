@@ -64,3 +64,20 @@ func (h *PostHandle) GetPosts(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
+
+func (h *PostHandle) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
+	category := r.PathValue("CATEGORY_NAME")
+	list, err := h.Repo.CategoryPosts(category)
+	if err != nil {
+		http.Error(w, "CategoryPosts error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp, err := json.Marshal(list)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
