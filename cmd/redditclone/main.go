@@ -26,6 +26,7 @@ func main() {
 
 	authR := http.NewServeMux()
 	authR.HandleFunc("POST /api/posts", postHandle.AddPost)
+	authR.HandleFunc("POST /api/post/{POST_ID}", postHandle.AddComment)
 
 	r.Handle("/api/", middleware.Auth(authR))
 

@@ -10,13 +10,14 @@ import (
 )
 
 type Post struct {
+	mu               sync.RWMutex
 	ID               string                `json:"id"`
 	Title            string                `json:"title"`
 	Author           middleware.UserClaims `json:"author"`
 	Category         string                `json:"category"`
 	Score            int                   `json:"score"`
-	VotesPost        []Votes               `json:"votes"`
-	Comments         []CommentsPost        `json:"comments"`
+	VotesPost        []*Votes              `json:"votes"`
+	Comments         []*Comment            `json:"comments"`
 	Created          time.Time             `json:"created"`
 	Views            int                   `json:"views"`
 	Type             string                `json:"type"`
@@ -30,8 +31,11 @@ type Votes struct { // не доработан
 	Vote int
 }
 
-type CommentsPost struct { //заглушка
-
+type Comment struct {
+	ID      string                `json:"id"`
+	Author  middleware.UserClaims `json:"author"`
+	Body    string                `json:"body"`
+	Created time.Time             `json:"created"`
 }
 
 type Repo interface {
@@ -98,8 +102,8 @@ func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, 
 		Type:             postType,
 		UpvotePercentage: 100,
 		Views:            0,
-		VotesPost:        make([]Votes, 0),
-		Comments:         make([]CommentsPost, 0),
+		VotesPost:        make([]*Votes, 0),
+		Comments:         make([]*Comment, 0),
 	}
 	if postType == "text" {
 		post.Text = text
@@ -108,4 +112,16 @@ func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, 
 	}
 	r.Posts = append(r.Posts, &post)
 	return &post
+}
+
+func (p *Post) AddComment(autor middleware.UserClaims, body string) {
+	comment := &Comment{
+		ID:      uuid.NewString(),
+		Author:  autor,
+		Body:    body,
+		Created: time.Now(),
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.Comments = append(p.Comments, comment)
 }
