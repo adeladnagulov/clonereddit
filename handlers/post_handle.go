@@ -67,12 +67,31 @@ func (h *PostHandle) GetPosts(w http.ResponseWriter, r *http.Request) {
 
 func (h *PostHandle) GetPostsByCategory(w http.ResponseWriter, r *http.Request) {
 	category := r.PathValue("CATEGORY_NAME")
-	list, err := h.Repo.CategoryPosts(category)
+	list, err := h.Repo.PostsByCategory(category)
 	if err != nil {
 		http.Error(w, "CategoryPosts error"+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	resp, err := json.Marshal(list)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
+func (h *PostHandle) GetPostsByID(w http.ResponseWriter, r *http.Request) {
+	postId := r.PathValue("POST_ID")
+	post, err := h.Repo.PostByID(postId)
+	if err != nil {
+		http.Error(w, "find PostByID error", http.StatusNotFound)
+		return
+	}
+	post.Views++
+
+	resp, err := json.Marshal(post)
 	if err != nil {
 		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
 		return

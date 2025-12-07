@@ -2,6 +2,7 @@ package post
 
 import (
 	"cloneRaddit/middleware"
+	"errors"
 	"sync"
 	"time"
 
@@ -36,7 +37,8 @@ type CommentsPost struct { //заглушка
 type Repo interface {
 	CreateNewPost(userId, username, category, title, postType, text, url string) *Post
 	GetAllPosts() ([]*Post, error)
-	CategoryPosts(category string) ([]*Post, error)
+	PostsByCategory(category string) ([]*Post, error)
+	PostByID(id string) (*Post, error)
 }
 
 type MemoryRepo struct {
@@ -56,7 +58,7 @@ func (r *MemoryRepo) GetAllPosts() ([]*Post, error) {
 	return r.Posts, nil
 }
 
-func (r *MemoryRepo) CategoryPosts(category string) ([]*Post, error) {
+func (r *MemoryRepo) PostsByCategory(category string) ([]*Post, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	rez := []*Post{}
@@ -66,6 +68,17 @@ func (r *MemoryRepo) CategoryPosts(category string) ([]*Post, error) {
 		}
 	}
 	return rez, nil
+}
+
+func (r *MemoryRepo) PostByID(id string) (*Post, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, p := range r.Posts {
+		if p.ID == id {
+			return p, nil
+		}
+	}
+	return nil, errors.New("Not found user")
 }
 
 func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, text, url string) *Post {
