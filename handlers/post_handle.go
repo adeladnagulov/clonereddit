@@ -134,3 +134,38 @@ func (h *PostHandle) AddComment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	w.Write(resp)
 }
+
+func (h *PostHandle) DeleteComment(w http.ResponseWriter, r *http.Request) {
+	postId := r.PathValue("POST_ID")
+	commentId := r.PathValue("COMMENT_ID")
+	post, err := h.Repo.PostByID(postId)
+	if err != nil {
+		http.Error(w, "find PostByID error", http.StatusNotFound)
+		return
+	}
+
+	u, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		http.Error(w, "Ошибка авторизации", http.StatusInternalServerError)
+		return
+	}
+	err = post.DeleteComment(commentId, u)
+	if err != nil {
+		if err.Error() == "access is restricted" {
+			http.Error(w, "access is restricted", http.StatusForbidden)
+			return
+		} else {
+			http.Error(w, "comment not found", http.StatusNotFound)
+			return
+		}
+	}
+
+	resp, err := json.Marshal(post)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}

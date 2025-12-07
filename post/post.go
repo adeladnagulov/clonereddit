@@ -125,3 +125,18 @@ func (p *Post) AddComment(autor middleware.UserClaims, body string) {
 	defer p.mu.Unlock()
 	p.Comments = append(p.Comments, comment)
 }
+
+func (p *Post) DeleteComment(commentId string, user middleware.UserClaims) error {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.Author.ID != user.ID {
+		return errors.New("access is restricted")
+	}
+	for i, v := range p.Comments {
+		if v.ID == commentId {
+			p.Comments = append(p.Comments[:i], p.Comments[i+1:]...)
+			return nil
+		}
+	}
+	return errors.New("comment not found")
+}
