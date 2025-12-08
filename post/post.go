@@ -44,6 +44,7 @@ type Repo interface {
 	PostsByCategory(category string) ([]*Post, error)
 	PostByID(id string) (*Post, error)
 	DeletePost(post *Post, autor middleware.UserClaims) error
+	PostsByUser(username string) ([]*Post, error)
 }
 
 type MemoryRepo struct {
@@ -69,6 +70,18 @@ func (r *MemoryRepo) PostsByCategory(category string) ([]*Post, error) {
 	rez := []*Post{}
 	for _, p := range r.Posts {
 		if p.Category == category {
+			rez = append(rez, p)
+		}
+	}
+	return rez, nil
+}
+
+func (r *MemoryRepo) PostsByUser(username string) ([]*Post, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	rez := []*Post{}
+	for _, p := range r.Posts {
+		if p.Author.UserName == username {
 			rez = append(rez, p)
 		}
 	}

@@ -23,6 +23,7 @@ func main() {
 	r.HandleFunc("GET /api/posts", postHandle.GetPosts)
 	r.HandleFunc("GET /api/posts/{CATEGORY_NAME}", postHandle.GetPostsByCategory)
 	r.HandleFunc("GET /api/post/{POST_ID}", postHandle.GetPostsByID)
+	r.HandleFunc("GET /api/user/{USER_LOGIN}", postHandle.GetPostsByUser)
 
 	authR := http.NewServeMux()
 	authR.HandleFunc("POST /api/posts", postHandle.AddPost)

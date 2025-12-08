@@ -82,6 +82,23 @@ func (h *PostHandle) GetPostsByCategory(w http.ResponseWriter, r *http.Request) 
 	w.Write(resp)
 }
 
+func (h *PostHandle) GetPostsByUser(w http.ResponseWriter, r *http.Request) {
+	username := r.PathValue("USER_LOGIN")
+	list, err := h.Repo.PostsByUser(username)
+	if err != nil {
+		http.Error(w, "CategoryPosts error"+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	resp, err := json.Marshal(list)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
 func (h *PostHandle) GetPostsByID(w http.ResponseWriter, r *http.Request) {
 	postId := r.PathValue("POST_ID")
 	post, err := h.Repo.PostByID(postId)
