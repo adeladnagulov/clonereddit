@@ -43,6 +43,7 @@ type Repo interface {
 	GetAllPosts() ([]*Post, error)
 	PostsByCategory(category string) ([]*Post, error)
 	PostByID(id string) (*Post, error)
+	DeletePost(post *Post, autor middleware.UserClaims) error
 }
 
 type MemoryRepo struct {
@@ -112,6 +113,18 @@ func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, 
 	}
 	r.Posts = append(r.Posts, &post)
 	return &post
+}
+
+func (r *MemoryRepo) DeletePost(post *Post, autor middleware.UserClaims) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	for i, v := range r.Posts {
+		if v.ID == post.ID && post.Author.ID == autor.ID {
+			r.Posts = append(r.Posts[:i], r.Posts[i+1:]...)
+			return nil
+		}
+	}
+	return errors.New("not faund or access is restricted")
 }
 
 func (p *Post) AddComment(autor middleware.UserClaims, body string) {

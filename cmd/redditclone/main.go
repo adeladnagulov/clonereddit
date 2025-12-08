@@ -31,6 +31,7 @@ func main() {
 	authR.HandleFunc("GET /api/post/{POST_ID}/upvote", postHandle.Upvote)
 	authR.HandleFunc("GET /api/post/{POST_ID}/downvote", postHandle.Downvote)
 	authR.HandleFunc("GET /api/post/{POST_ID}/unvote", postHandle.Unvote)
+	authR.HandleFunc("DELETE /api/post/{POST_ID}", postHandle.DeleteComment)
 
 	r.Handle("/api/", middleware.Auth(authR))
 

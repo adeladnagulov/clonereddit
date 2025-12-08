@@ -101,6 +101,34 @@ func (h *PostHandle) GetPostsByID(w http.ResponseWriter, r *http.Request) {
 	w.Write(resp)
 }
 
+func (h *PostHandle) DeletePost(w http.ResponseWriter, r *http.Request) {
+	postId := r.PathValue("POST_ID")
+	post, err := h.Repo.PostByID(postId)
+	if err != nil {
+		http.Error(w, "find PostByID error", http.StatusNotFound)
+		return
+	}
+	u, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		http.Error(w, "Ошибка авторизации", http.StatusInternalServerError)
+		return
+	}
+	err = h.Repo.DeletePost(post, u)
+	if err != nil {
+		http.Error(w, "DeletePost error:"+err.Error(), http.StatusNotFound)
+		return
+	}
+
+	resp, err := json.Marshal(post)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
+
 func (h *PostHandle) AddComment(w http.ResponseWriter, r *http.Request) {
 	postId := r.PathValue("POST_ID")
 	post, err := h.Repo.PostByID(postId)
