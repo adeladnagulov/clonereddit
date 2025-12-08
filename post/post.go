@@ -16,7 +16,7 @@ type Post struct {
 	Author           middleware.UserClaims `json:"author"`
 	Category         string                `json:"category"`
 	Score            int                   `json:"score"`
-	VotesPost        []*Votes              `json:"votes"`
+	VotesPost        []*Vote               `json:"votes"`
 	Comments         []*Comment            `json:"comments"`
 	Created          time.Time             `json:"created"`
 	Views            int                   `json:"views"`
@@ -26,9 +26,9 @@ type Post struct {
 	UpvotePercentage int                   `json:"upvotePercentage"`
 }
 
-type Votes struct { // не доработан
-	User string
-	Vote int
+type Vote struct {
+	UserID string `json:"user"`
+	Vote   int    `json:"vote"`
 }
 
 type Comment struct {
@@ -102,7 +102,7 @@ func (r *MemoryRepo) CreateNewPost(userId, username, category, title, postType, 
 		Type:             postType,
 		UpvotePercentage: 100,
 		Views:            0,
-		VotesPost:        make([]*Votes, 0),
+		VotesPost:        make([]*Vote, 0),
 		Comments:         make([]*Comment, 0),
 	}
 	if postType == "text" {
@@ -139,4 +139,50 @@ func (p *Post) DeleteComment(commentId string, user middleware.UserClaims) error
 		}
 	}
 	return errors.New("comment not found")
+}
+
+func (p *Post) Vote(user string, voteValue int) {
+	voteIndx := -1
+	for i, v := range p.VotesPost {
+		if v.UserID == user {
+			voteIndx = i
+			break
+		}
+	}
+
+	if voteIndx != -1 {
+		vote := p.VotesPost[voteIndx]
+		p.Score -= vote.Vote
+		if voteValue == 0 {
+			p.VotesPost = append(p.VotesPost[:voteIndx], p.VotesPost[voteIndx+1:]...)
+		} else {
+			p.Score += voteValue
+			vote.Vote = voteValue
+		}
+	} else if voteValue != 0 {
+		p.Score += voteValue
+		p.VotesPost = append(p.VotesPost, &Vote{UserID: user, Vote: voteValue})
+	}
+}
+
+func (p *Post) CalculateUpvotePercentage() {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	upvotes := 0
+	downvotes := 0
+	for _, v := range p.VotesPost {
+		switch v.Vote {
+		case 1:
+			upvotes++
+		case -1:
+			downvotes++
+		}
+	}
+	totalVotes := upvotes + downvotes
+	if totalVotes != 0 {
+		p.UpvotePercentage = (upvotes * 100) / totalVotes
+	} else {
+		p.UpvotePercentage = 0
+	}
+
 }

@@ -169,3 +169,40 @@ func (h *PostHandle) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(resp)
 }
+
+func (h *PostHandle) Upvote(w http.ResponseWriter, r *http.Request) {
+	h.vote(w, r, 1)
+}
+
+func (h *PostHandle) Downvote(w http.ResponseWriter, r *http.Request) {
+	h.vote(w, r, -1)
+}
+
+func (h *PostHandle) Unvote(w http.ResponseWriter, r *http.Request) {
+	h.vote(w, r, 0)
+}
+
+func (h *PostHandle) vote(w http.ResponseWriter, r *http.Request, voteValue int) {
+	postId := r.PathValue("POST_ID")
+	u, ok := middleware.GetUserClaims(r.Context())
+	if !ok {
+		http.Error(w, "Ошибка авторизации", http.StatusInternalServerError)
+		return
+	}
+	post, err := h.Repo.PostByID(postId)
+	if err != nil {
+		http.Error(w, "find PostByID error", http.StatusNotFound)
+		return
+	}
+	post.Vote(u.ID, voteValue)
+	post.CalculateUpvotePercentage()
+
+	resp, err := json.Marshal(post)
+	if err != nil {
+		http.Error(w, "json Marshal error: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
+}
